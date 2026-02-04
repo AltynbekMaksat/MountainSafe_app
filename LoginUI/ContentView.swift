@@ -1,103 +1,71 @@
-//
-//  ContentView.swift
-//  LoginUI
-//
-//  Created by Ian Solomein on 15.08.2020.
-//  Copyright © 2020 Ian Solomein. All rights reserved.
-//
-
-
-
 import SwiftUI
+import Firebase
+import FirebaseAuth
 
+// MARK: - Главный View
 struct ContentView: View {
+    @State private var isUserLoggedIn = false
+    @State private var isLoading = true
+    
     var body: some View {
-        
-        SignIn()
-    }
-}
-
-struct SignIn : View {
-    
-    @State var user = ""
-    @State var pass = ""
-    
-    var body : some View{
-        VStack {
-             Text("Sign In").fontWeight(.heavy).font(.largeTitle).padding([.top,.bottom], 20)
-            VStack{
+        ZStack {
+            if isLoading {
+                // Экран загрузки с новым логотипом
+                Color(red: 9/255, green: 14/255, blue: 26/255)
+                    .edgesIgnoringSafeArea(.all)
                 
-                VStack(alignment: .leading){
+                VStack(spacing: 20) {
+                    // Новый логотип - горы
+                    Image(systemName: "mountain.2.fill")
+                        .resizable()
+                        .frame(width: 100, height: 80)
+                        .foregroundColor(Color(red: 198/255, green: 255/255, blue: 0/255))
                     
-                    VStack(alignment: .leading){
+                    VStack(spacing: 5) {
+                        Text("HIKING")
+                            .font(.system(size: 36, weight: .heavy))
+                            .foregroundColor(.white)
                         
-                        Text("Username").font(.headline).fontWeight(.light).foregroundColor(Color.init(.label).opacity(0.75))
-                        
-                        HStack{
-                            
-                            TextField("Enter Your Username", text: $user)
-                            
-                            if user != ""{
-                                
-                                Image("check").foregroundColor(Color.init(.label))
-                            }
-                            
-                        }
-                        
-                        Divider()
-                        
-                    }.padding(.bottom, 15)
-                    
-                    VStack(alignment: .leading){
-                        
-                        Text("Password").font(.headline).fontWeight(.light).foregroundColor(Color.init(.label).opacity(0.75))
-                        
-                        SecureField("Enter Your Password", text: $pass)
-                        
-                        Divider()
+                        Text("SYSTEM")
+                            .font(.system(size: 24, weight: .medium))
+                            .foregroundColor(Color(red: 198/255, green: 255/255, blue: 0/255))
                     }
-                      
-                }.padding(.horizontal, 6)
-             
-            }.padding()
-            VStack{
-                
-                Button(action: {
-                    
-                }) {
-                    
-                    Text("Sign In").foregroundColor(.white).frame(width: UIScreen.main.bounds.width - 120).padding()
-                    
-                    
-                }.background(Color("color"))
-                    .clipShape(Capsule())
-                    .padding(.top, 45)
-                
-                Text("(or)").foregroundColor(Color.gray.opacity(0.5)).padding(.top,30)
-                
-                
-                
-                HStack(spacing: 8){
-                    
-                    Text("Don't Have An Account ?").foregroundColor(Color.gray.opacity(0.5))
-                    
-                    Button(action: {
-                        
-                    }) {
-                        
-                        Text("Sign Up")
-                        
-                    }.foregroundColor(.blue)
-                    
-                }.padding(.top, 25)
+                }
+            } else {
+                NavigationView {
+                    if isUserLoggedIn {
+                        CustomTabView()
+                            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("UserDidSignOut"))) { _ in
+                                withAnimation {
+                                    isUserLoggedIn = false
+                                }
+                            }
+                    } else {
+                        SignIn()
+                            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("UserDidSignIn"))) { _ in
+                                withAnimation {
+                                    isUserLoggedIn = true
+                                }
+                            }
+                            .onAppear {
+                                checkAuthStatus()
+                            }
+                    }
+                }
+                .navigationViewStyle(StackNavigationViewStyle())
             }
         }
+        .onAppear {
+            checkAuthStatus()
+        }
     }
-}
-
-
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        ContentView()
+    
+    private func checkAuthStatus() {
+        if Auth.auth().currentUser != nil {
+            isUserLoggedIn = true
+        } else {
+            isUserLoggedIn = false
+        }
+        isLoading = false
     }
 }
